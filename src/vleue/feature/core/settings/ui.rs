@@ -11,6 +11,9 @@ use crate::vleue::feature::core::i18n::I18nResource;
 #[derive(Default, PartialEq)]
 pub enum SettingsTab { #[default] Graphics, Audio, Game, Keybinds, Performance }
 
+#[derive(Default)]
+pub struct RenderDiagnosticsDebugLogState { frame_count: u32 }
+
 /// Toggle settings panel open/close
 pub fn toggle_settings_ui(keyboard: Res<ButtonInput<KeyCode>>, mut ui_state: ResMut<SettingsUiState>, mut editing_state: ResMut<KeybindEditingState>) {
 	if editing_state.editing_field.is_some() {
@@ -30,7 +33,7 @@ pub fn toggle_settings_ui(keyboard: Res<ButtonInput<KeyCode>>, mut ui_state: Res
 }
 
 /// Draw settings panel UI
-pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<SettingsUiState>, mut settings: ResMut<GameSettings>, mut keybinds: ResMut<PlayerKeybinds>, mut editing_state: ResMut<KeybindEditingState>, keyboard: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, i18n: Res<I18nResource>, diagnostics: Res<DiagnosticsStore>, mut active_tab: Local<SettingsTab>, mut app_exit: MessageWriter<AppExit>, ) {
+pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<SettingsUiState>, mut settings: ResMut<GameSettings>, mut keybinds: ResMut<PlayerKeybinds>, mut editing_state: ResMut<KeybindEditingState>, keyboard: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, i18n: Res<I18nResource>, diagnostics: Res<DiagnosticsStore>, mut active_tab: Local<SettingsTab>, mut render_diagnostics_log_state: Local<RenderDiagnosticsDebugLogState>, mut app_exit: MessageWriter<AppExit>, ) {
 	let Ok(ctx) = contexts.ctx_mut() else { return; };
 	if !ui_state.opened { return; }
 	let t = |key: &str| i18n.t(key);
@@ -115,7 +118,9 @@ pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<Setting
 				draw_diagnostic_row(ui, "System CPU", diagnostic_smoothed(&diagnostics, &SystemInformationDiagnosticsPlugin::SYSTEM_CPU_USAGE).map(|value| format!("{value:.1} %")).unwrap_or_else(|| "--".to_string()));
 				draw_diagnostic_row(ui, "System RAM", diagnostic_smoothed(&diagnostics, &SystemInformationDiagnosticsPlugin::SYSTEM_MEM_USAGE).map(|value| format!("{value:.1} %")).unwrap_or_else(|| "--".to_string()));
 				ui.separator();
-				ui.label("GPU usage has no unified cross-platform API; frame time is the closest visual indicator here.");
+				draw_render_diagnostics(ui, &diagnostics, &mut render_diagnostics_log_state);
+				ui.separator();
+				ui.label("GPU usage percentage is not shown here; Vulkan/DX12 render diagnostics show GPU elapsed time and pipeline statistics.");
 			}
 		}
 
@@ -141,6 +146,49 @@ fn draw_diagnostic_row(ui: &mut egui::Ui, label: &str, value: String) {
 
 fn diagnostic_smoothed(diagnostics: &DiagnosticsStore, path: &bevy::diagnostic::DiagnosticPath) -> Option<f64> {
 	diagnostics.get(path).and_then(|diagnostic| diagnostic.smoothed())
+}
+
+fn draw_render_diagnostics(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore, log_state: &mut RenderDiagnosticsDebugLogState) {
+	let mut all_paths = Vec::new();
+	let mut rows = Vec::new();
+	for diagnostic in diagnostics.iter() {
+		let path = diagnostic.path().to_string();
+		all_paths.push(path.clone());
+		if path.starts_with("render/") {
+			rows.push((path, diagnostic.smoothed(), diagnostic.suffix.to_string()));
+		}
+	}
+	rows.sort_by(|a, b| a.0.cmp(&b.0));
+	log_state.frame_count = log_state.frame_count.wrapping_add(1);
+	if log_state.frame_count == 1 || log_state.frame_count % 120 == 0 {
+		let render_rows = rows.iter().map(|(path, smoothed, suffix)| {
+			let value = smoothed.map(|value| format!("{value:.3}{suffix}")).unwrap_or_else(|| "--".to_string());
+			format!("{path}={value}")
+		}).take(32).collect::<Vec<_>>();
+		let sample_paths = all_paths.iter().map(String::as_str).take(32).collect::<Vec<_>>();
+		info!("Render diagnostics debug: all_count={}, render_count={}, sample_paths={:?}, render_rows={:?}", all_paths.len(), rows.len(), sample_paths, render_rows);
+	}
+	if rows.is_empty() {
+		ui.label("Render diagnostics: --");
+		return;
+	}
+	draw_diagnostic_row(ui, "Render diagnostics", rows.len().to_string());
+	draw_diagnostic_row(ui, "Max render GPU", max_render_diagnostic(&rows, "/elapsed_gpu").unwrap_or_else(|| "--".to_string()));
+	draw_diagnostic_row(ui, "Max render CPU", max_render_diagnostic(&rows, "/elapsed_cpu").unwrap_or_else(|| "--".to_string()));
+	ui.separator();
+	egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
+		for (path, value, suffix) in rows {
+			let value = value.map(|value| format!("{value:.2}{suffix}")).unwrap_or_else(|| "--".to_string());
+			draw_diagnostic_row(ui, &path, value);
+		}
+	});
+}
+
+fn max_render_diagnostic(rows: &[(String, Option<f64>, String)], suffix_filter: &str) -> Option<String> {
+	rows.iter()
+		.filter(|(path, value, _)| path.ends_with(suffix_filter) && value.is_some())
+		.max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(core::cmp::Ordering::Equal))
+		.map(|(path, value, suffix)| format!("{} {:.3}{}", path, value.unwrap_or_default(), suffix))
 }
 
 

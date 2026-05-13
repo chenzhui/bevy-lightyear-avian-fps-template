@@ -4,6 +4,8 @@ use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, SystemInformationDiagnosticsP
 use bevy_inspector_egui::bevy_egui::EguiPrimaryContextPass;
 use bevy::dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin};
 use bevy::prelude::*;
+use bevy::render::diagnostic::RenderDiagnosticsPlugin;
+use bevy::render::renderer::RenderAdapterInfo;
 use bevy::render::view::Msaa;
 use bevy::window::{MonitorSelection, PresentMode, PrimaryWindow, WindowMode};
 use bevy::winit::{UpdateMode, WinitSettings};
@@ -21,7 +23,7 @@ impl Plugin for SettingsPlugin {
 		match self.side {
 			VleueSide::Client => {
 				let (settings, keybinds) = load_or_create();
-				app.add_plugins((FrameTimeDiagnosticsPlugin::default(), SystemInformationDiagnosticsPlugin));
+				app.add_plugins((FrameTimeDiagnosticsPlugin::default(), SystemInformationDiagnosticsPlugin, RenderDiagnosticsPlugin));
 				app.add_plugins(FpsOverlayPlugin { config: FpsOverlayConfig { enabled: settings.graphics.show_fps, text_config: TextFont { font_size: 16.0, ..default() }, text_color: Color::srgb(0.8, 0.92, 0.78), ..default() } });
 				if settings.debug.show_inspector { app.add_plugins(WorldInspectorPlugin::new()); }
 				app.insert_resource(winit_settings_from_game_settings(&settings));
@@ -30,9 +32,9 @@ impl Plugin for SettingsPlugin {
 				app.insert_resource(keybinds);
 				app.init_resource::<SettingsUiState>();
 				app.init_resource::<KeybindEditingState>();
-				app.add_systems(Startup, apply_window_settings);
+				app.add_systems(Startup, (apply_window_settings, log_render_adapter_info));
 				app.add_systems(Update, (toggle_settings_ui, sync_fps_overlay_config));
-			    app.add_systems(EguiPrimaryContextPass, draw_settings_ui);
+		    app.add_systems(EguiPrimaryContextPass, draw_settings_ui);
 			}
 			VleueSide::Server => {
 
@@ -41,6 +43,11 @@ impl Plugin for SettingsPlugin {
 	}
 }
 
+
+/// Log actual render backend and adapter selected by wgpu
+fn log_render_adapter_info(adapter_info: Res<RenderAdapterInfo>) {
+	info!("Render adapter: backend={:?}, name={}, device_type={:?}, driver={}, driver_info={}", adapter_info.backend, adapter_info.name, adapter_info.device_type, adapter_info.driver, adapter_info.driver_info);
+}
 
 
 /// Sync FPS Overlay toggle — Settings panel checkbox immediately affects Bevy UI FPS text

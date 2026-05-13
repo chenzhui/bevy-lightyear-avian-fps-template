@@ -21,7 +21,8 @@ impl Plugin for ProjectLogPlugin {
                 bevy::log::tracing_subscriber::fmt::layer().with_filter(
                     bevy::log::tracing_subscriber::filter::filter_fn(|metadata| {
                         let target = metadata.target();
-                        target == env!("CARGO_PKG_NAME") || target.starts_with(concat!(env!("CARGO_PKG_NAME"), "::"))
+                        let is_project_target = target == env!("CARGO_PKG_NAME") || target.starts_with(concat!(env!("CARGO_PKG_NAME"), "::"));
+                        is_project_target || matches!(*metadata.level(), bevy::log::tracing::Level::ERROR | bevy::log::tracing::Level::WARN  )
                     }),
                 ),
             );
