@@ -50,9 +50,9 @@ bevy_symbios_ground = "0.2" # Terrain visual mesh generation; keep physics disab
 symbios-ground = "0.2" # Terrain data structures: HeightMap / WeightMap.
 bevy-inspector-egui = { version = "=0.36.0", default-features = false, features = [  # Debugging and visualization tools.
     "bevy_pbr",
-    "bevy_image",
+#    "bevy_image",
     "bevy_render",
-    "egui_open_url",
+#    "egui_open_url",
 ] }
 
 lightyear = { version = "=0.26.3", features = [
@@ -87,7 +87,7 @@ avian3d = { version = "=0.5.0", features = [
     # "bevy_picking",        # bevy_picking physics picking support.
     # "bevy_diagnostic",     # Write physics diagnostics to DiagnosticsStore.
     "diagnostic_ui",         # Physics diagnostic UI overlay.
-     "debug-plugin",        # Physics debug rendering.
+    "debug-plugin",        # Physics debug rendering.
     # "enhanced-determinism", # Cross-platform deterministic math.
     # "parallel",            # Additional parallel optimizations.
     # "simd",                # SIMD optimizations.

@@ -1,6 +1,6 @@
 
 pub(crate) mod types;
-mod map;
+pub mod map;
 
 use bevy::prelude::*;
 use crate::vleue::feature::VleueSide;
