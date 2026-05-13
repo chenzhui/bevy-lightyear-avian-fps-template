@@ -1,0 +1,11 @@
+/target/
+/room-service/target/
+/logs/
+*.log
+*.pdb
+*.exe
+*.dll
+*.lib
+*.a
+.idea/
+.env

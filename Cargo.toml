@@ -1,0 +1,117 @@
+[package]
+name = "bevy_lightyear_fps_example"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+default = ["combat"]
+combat = []
+
+[dependencies]
+bevy = { version = "=0.18.0", default-features = false, features = [
+    "bevy_winit",            # Windowing and input backend.
+#    "bevy_audio",            # Basic audio support.
+    "bevy_core_pipeline",    # Core rendering pipeline.
+    "bevy_gltf",             # glTF model loading.
+    "bevy_render",           # Basic rendering support.
+    "bevy_gizmos",           # Debug wireframe and ray visualization.
+#    "bevy_sprite",           # 2D sprite support.
+    "bevy_state",            # Global state machine support.
+    "multi_threaded",        # Multi-threaded task execution.
+    "bevy_log",              # Logging.
+    "ui",                    # UI framework.
+    "bevy_mesh",             # Mesh data support.
+#    "2d",                    # 2D feature preset.
+    "3d",                    # 3D feature preset.
+    "free_camera",           # Free camera support.
+#    "wav",                   # WAV audio format support.
+#    "jpeg",                  # JPEG image format support.
+    "async-io",              # Async IO support.
+    "bevy_scene",            # Scene loading and instantiation.
+    "bevy_pbr",              # Physically based 3D rendering.
+    "bevy_animation",        # Animation system.
+    "gltf_animation",        # Load animation data from glTF.
+#    "bevy_picking",          # Picking system core.
+#    "mesh_picking",          # 3D mesh picking.
+#    "ui_picking",            # UI picking.
+#    "tonemapping_luts",      # Tonemapping lookup tables.
+#    "dynamic_linking",       # Faster incremental builds, disabled for debugger compatibility.
+#    "file_watcher",          # Asset hot reload.
+#    "png",                   # PNG image format support.
+#    "hdr",                   # HDR environment maps.
+#    "vorbis",                # OGG/Vorbis audio format support.
+    "bevy_dev_tools",        # Developer debugging tools.
+    "custom_cursor",         # Custom mouse cursor.
+#    "asset_processor",       # Asset preprocessing, disabled to keep dev asset loading fast.
+    "serialize",             # Serialization support.
+] }
+
+bevy_symbios_ground = "0.2" # Terrain visual mesh generation; keep physics disabled to avoid pulling avian3d 0.6.
+symbios-ground = "0.2" # Terrain data structures: HeightMap / WeightMap.
+bevy-inspector-egui = { version = "=0.36.0", default-features = false, features = [  # Debugging and visualization tools.
+    "bevy_pbr",
+    "bevy_image",
+    "bevy_render",
+    "egui_open_url",
+] }
+
+lightyear = { version = "=0.26.3", features = [
+    "client",                # Client features and plugins.
+    "server",                # Server features and plugins.
+    "replication",           # Entity replication.
+    "prediction",            # Client-side prediction.
+    "interpolation",         # Entity interpolation.
+    "frame_interpolation",   # Frame interpolation for smoother physics.
+    "input_native",          # Native input structure support.
+    "leafwing",              # leafwing-input-manager integration.
+    "avian3d",               # avian3d physics integration.
+    "netcode",               # Encryption, authentication, and persistent IDs.
+    "udp",                   # UDP transport.
+    "deterministic",         # Deterministic synchronization.
+#    "metrics",               # Network metrics.
+    # "trace",               # Detailed network tracing.
+    # "websocket",           # WebSocket support, currently disabled.
+    # "webtransport",        # WebTransport support, currently disabled.
+] }
+
+avian3d = { version = "=0.5.0", features = [
+    "3d",                    # Enable 3D physics.
+    # "f32",                 # f32 precision, enabled by default.
+    # "f64",                 # f64 precision, mutually exclusive with f32.
+    "default-collider",      # Default Collider support, required for spatial queries.
+    # "parry-f32",           # Parry f32 collision detection, enabled by default.
+    # "parry-f64",           # Parry f64 collision detection, disabled by default.
+    # "xpbd_joints",         # XPBD joint constraints, enabled by default.
+    "collider-from-mesh",    # Create Collider from Mesh.
+    "bevy_scene",            # ColliderConstructorHierarchy scene-loading support.
+    # "bevy_picking",        # bevy_picking physics picking support.
+    # "bevy_diagnostic",     # Write physics diagnostics to DiagnosticsStore.
+    "diagnostic_ui",         # Physics diagnostic UI overlay.
+     "debug-plugin",        # Physics debug rendering.
+    # "enhanced-determinism", # Cross-platform deterministic math.
+    # "parallel",            # Additional parallel optimizations.
+    # "simd",                # SIMD optimizations.
+    "serialize",             # Serde serialization support.
+    # "validate",            # Extra correctness checks with performance cost.
+] }
+
+lightyear_replication = "=0.26.3" # Version pin for compatibility.
+leafwing-input-manager = { version = "=0.20.0", default-features = false, features = [ # Input.
+    "keyboard",
+    "mouse",
+] }
+
+serde = { version = "=1.0", features = ["derive"] } # Serialization/deserialization framework.
+serde_json = "1.0"                        # JSON support.
+ron = "=0.12.1"                            # RON asset configuration format.
+toml = "1.1.2+spec-1.1.0"                              # TOML support.
+dirs = "6.0.0"                              # Standard platform directories.
+reqwest = { version = "0.12.0", features = ["json", "blocking"] } # HTTP client for lobby/backend APIs.
+futures-lite = "2.0"                      # Lightweight async utilities.
+clap = { version = "=4.5.4", features = ["derive"] } # CLI argument parsing.
+once_cell = "1.21.4" # Lazy initialization.
+# Dependency version compatibility override.
+wgpu-hal = "=27.0.3"
+
+
+

@@ -1,0 +1,40 @@
+use std::env;
+use std::fs;
+use std::path::Path;
+
+pub fn load_dotenv() {
+    let path = Path::new(".env");
+    let Ok(content) = fs::read_to_string(path) else {
+        return;
+    };
+
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
+        let key = key.trim();
+        if key.is_empty() || env::var_os(key).is_some() {
+            continue;
+        }
+        let value = value.trim().trim_matches('"');
+        unsafe {
+            env::set_var(key, value);
+        }
+    }
+}
+
+pub fn env_string(key: &str, default: &str) -> String {
+    env::var(key).unwrap_or_else(|_| default.to_string())
+}
+
+pub fn env_u16(key: &str, default: u16) -> u16 {
+    env::var(key).ok().and_then(|value| value.parse::<u16>().ok()).unwrap_or(default)
+}
+
+pub fn env_u64(key: &str, default: u64) -> u64 {
+    env::var(key).ok().and_then(|value| value.parse::<u64>().ok()).unwrap_or(default)
+}

@@ -1,0 +1,21 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: open-source-room-service
+
+logging:
+  level:
+    root: INFO
+    io.github.bevy_lightyear_fps_example.room: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+game:
+  server:
+    host: ${GAME_SERVER_HOST:127.0.0.1}
+    port: ${GAME_SERVER_PORT:5888}
+    room-count: ${GAME_SERVER_ROOM_COUNT:4}
+    room-capacity: ${GAME_SERVER_ROOM_CAPACITY:60}
+    token-ttl-seconds: ${GAME_SERVER_TOKEN_TTL_SECONDS:300}
