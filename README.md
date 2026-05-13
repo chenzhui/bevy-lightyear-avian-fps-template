@@ -19,7 +19,7 @@ This project serves as a reference architecture for building networked, room-bas
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) (latest stable)
-- Java 17+ (for the `room-service` backend)
+- Java 21+ (for the `room-service` backend)
 - Maven (for building the backend)
 
 ### Configuration
