@@ -1,4 +1,4 @@
-﻿use bevy::app::{App, Plugin};
+use bevy::app::{App, Plugin};
 use bevy::math::Vec2;
 use bevy::prelude::*;
 use bevy::tasks::{IoTaskPool, Task};
@@ -12,10 +12,9 @@ use lightyear_replication::prelude::{AppComponentExt, ControlledBy, DisableRepli
 use crate::vleue::cli_connection::{shared_settings, ClientConnection, ClientTransports, SEND_INTERVAL};
 use crate::vleue::feature::character::{VleueClientId, VleuePlayer};
 use crate::vleue::feature::VleueSide;
-use crate::vleue::feature::core::net::BackendClient;
+use crate::vleue::feature::core::net::{backend_base_url, BackendClient};
 use crate::vleue::feature::core::room::{FIXED_ROOM_COUNT, MatchRoomStates, PendingPlayers, RoomManager};
 use crate::vleue::feature::core::state::{AppClientState, InGameConnectionState, InGameState, UserId};
-use crate::vleue::util::env::env_string;
 
 #[derive(Resource, Clone, Debug)]
 pub struct LobbyBackendConfig {
@@ -87,7 +86,7 @@ pub struct MatchLoadingChannel; // Reliable channel used for match loading notif
 impl Default for LobbyBackendConfig {
 	fn default() -> Self {
 		Self {
-			base_url: env_string("GAME_BACKEND_BASE_URL", "http://127.0.0.1:8080"),
+			base_url: backend_base_url(),
 		}
 	}
 }

@@ -33,9 +33,9 @@ pub struct MapColliderMarker; // Local map collider marker; server/client genera
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct MapCollisionConfig {
-    pub terrain: Option<MapTerrainHeightfieldConfig>, #[serde(default)]
-    pub cuboids: Vec<MapCuboidColliderConfig>, #[serde(default)]
-    pub glb_instances: Vec<MapGlbInstanceConfig>, // Reserved for future "split GLB + RON splice" asset pipeline.
+    pub terrain: Option<MapTerrainHeightfieldConfig>,
+    #[serde(default)]pub cuboids: Vec<MapCuboidColliderConfig>,
+    #[serde(default)]pub glb_instances: Vec<MapGlbInstanceConfig>, // Reserved for future "split GLB + RON splice" asset pipeline.
 }
 
 #[derive(Clone, Debug, Deserialize)]

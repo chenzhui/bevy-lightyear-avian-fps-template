@@ -27,10 +27,9 @@ pub fn load_dotenv() {
     }
 }
 
-pub fn env_string(key: &str, default: &str) -> String {
-    env::var(key).unwrap_or_else(|_| default.to_string())
+pub fn env_string(key: &str) -> String {
+    env::var(key).expect(&format!("环境变量 {} 未设置", key))
 }
-
 pub fn env_u16(key: &str, default: u16) -> u16 {
     env::var(key).ok().and_then(|value| value.parse::<u16>().ok()).unwrap_or(default)
 }

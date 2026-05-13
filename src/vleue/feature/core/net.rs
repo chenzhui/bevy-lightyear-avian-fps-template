@@ -9,9 +9,47 @@ use reqwest::blocking::Client;
 use serde_json::Value;
 use crate::vleue::feature::VleueSide;
 use crate::vleue::util::env::env_string;
+
+
+//region plugin
+
+pub struct NetPlugin {
+    pub side: VleueSide, // net leaf entry: currently only registers common HTTP capability.
+}
+
+impl Plugin for NetPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(NetShaderPlugin);
+        app.add_systems(bevy::app::Update, poll_all_http_tasks); // Global HTTP task polling is only registered once, avoiding multiple gameplay leaves repeatedly polling the same Task.
+    }
+}
+
+
+//endregion plugin
+
 //region shader
 
-pub const DEFAULT_BACKEND_BASE_URL: &str = "http://127.0.0.1:8080"; // Default lobby backend HTTP address, overridden by env when present.
+#[derive(Clone)]
+pub struct NetShaderPlugin;
+
+impl Plugin for NetShaderPlugin{
+    fn build(&self, app: &mut App) {
+        app.insert_resource(BackendClient::default());
+        app.add_message::<HttpResponseEvent>();
+    }
+}
+
+
+//endregion shader
+
+
+
+
+pub const BACKEND_BASE_URL_ENV: &str = "GAME_BACKEND_BASE_URL";
+
+pub fn backend_base_url() -> String {
+    env_string(BACKEND_BASE_URL_ENV)
+}
 
 #[derive(Resource,Clone)]
 pub struct BackendClient{
@@ -35,44 +73,19 @@ impl BackendClient {
 
 impl Default for BackendClient {
     fn default() -> Self {
-        Self::new(env_string("GAME_BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL))
+        Self::new(backend_base_url())
     }
 }
 
-#[derive(Clone)]
-pub struct NetShaderPlugin;
-pub struct NetPlugin {
-    pub side: VleueSide, // net leaf entry: currently only registers common HTTP capability.
-}
-
-impl Plugin for NetShaderPlugin{
-    fn build(&self, app: &mut App) {
-        app.insert_resource(BackendClient::default());
-        app.add_message::<HttpResponseEvent>();
-    }
-}
-
-impl Plugin for NetPlugin {
-    fn build(&self, app: &mut App) {
-        let _ = self.side; // Reserve side for future expansion of different client network strategies without changing callers.
-        app.add_plugins(NetShaderPlugin);
-        app.add_systems(bevy::app::Update, poll_all_http_tasks); // Global HTTP task polling is only registered once, avoiding multiple gameplay leaves repeatedly polling the same Task.
-    }
-}
-
-//endregion shader
-
-
-/// Common HTTP task component: mounted on a temporary entity
 #[derive(Component)]
-pub struct HttpTask {
+pub struct HttpTask { // Common HTTP task component: mounted on a temporary entity
     pub action: &'static str, // Request action name, e.g. "JoinMatch", "CancelMatch"
     pub task: Task<bevy::prelude::Result<Value, String>>, // Use generic Value to receive any JSON
 }
 
-/// Common HTTP response event: triggered when any API returns
+
 #[derive(Message, Debug)]
-pub struct HttpResponseEvent {
+pub struct HttpResponseEvent { // Common HTTP response event: triggered when any API returns
     pub action: &'static str,
     pub data: Value, // Generic JSON object
 }
@@ -83,8 +96,7 @@ pub fn spawn_http_task(commands: &mut Commands<'_, '_>, action: &'static str, ta
     commands.spawn(HttpTask { action, task });
 }
 
-/// Global auto-poller: automatically processes all API tasks
-pub fn poll_all_http_tasks(mut commands: Commands, mut tasks: Query<(Entity, &mut HttpTask)>, mut event_writer: MessageWriter<HttpResponseEvent>) {
+pub fn poll_all_http_tasks(mut commands: Commands, mut tasks: Query<(Entity, &mut HttpTask)>, mut event_writer: MessageWriter<HttpResponseEvent>) {// Global auto-poller: automatically processes all API tasks
     for (entity, mut http_task) in tasks.iter_mut() {
         if let Some(result) = future::block_on(future::poll_once(&mut http_task.task)) {
             match result {
@@ -119,6 +131,9 @@ pub fn cleanup_pending_http_tasks(mut commands: Commands, tasks: Query<Entity, W
     }
 }
 
+
+//region parse
+
 pub fn json_bool(data: &Value, key: &str) -> bool {
     data.get(key).and_then(Value::as_bool).unwrap_or(false)
 }
@@ -141,3 +156,5 @@ pub fn json_u64(data: &Value, key: &str) -> Option<u64> {
 pub fn json_string(data: &Value, key: &str) -> Option<String> {
     data.get(key).and_then(Value::as_str).map(str::to_string)
 }
+
+//endregion parse
