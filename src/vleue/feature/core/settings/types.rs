@@ -43,6 +43,8 @@ pub struct InterfaceSettings {
 	pub show_crosshair: bool, // Whether to show crosshair.
 	pub show_health_hud: bool, // Whether to show top-left health bar HUD.
 	pub ui_scale: f32, // UI global scale.
+	#[serde(default = "default_language")]
+	pub language: String, // UI language code.
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -167,7 +169,7 @@ impl Default for GraphicsSettings {
 
 impl Default for InterfaceSettings {
 	fn default() -> Self {
-		Self { show_crosshair: true, show_health_hud: true, ui_scale: 1.0 }
+		Self { show_crosshair: true, show_health_hud: true, ui_scale: 1.0, language: default_language() }
 	}
 }
 
@@ -243,6 +245,9 @@ impl GameSettings {
 		self.audio.sfx_volume = self.audio.sfx_volume.clamp(0.0, 1.0);
 		self.free_cam.move_speed = self.free_cam.move_speed.clamp(1.0, 200.0);
 		self.free_cam.look_sensitivity = self.free_cam.look_sensitivity.clamp(0.0005, 0.1);
+		if !matches!(self.interface.language.as_str(), "zh" | "en") {
+			self.interface.language = default_language();
+		}
 		self
 	}
 }
@@ -326,6 +331,8 @@ pub enum KeybindField {
 fn default_skill_q_key() -> String { "Q".to_string() }
 
 fn default_toggle_inventory_key() -> String { "Tab".to_string() }
+
+fn default_language() -> String { "zh".to_string() }
 
 pub(crate) fn parse_input_binding(value: &str) -> Option<InputBinding> {
 	parse_mouse_button(value).map(InputBinding::Mouse).or_else(|| parse_keycode(value).map(InputBinding::Keyboard))

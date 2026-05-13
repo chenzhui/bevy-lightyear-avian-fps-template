@@ -10,11 +10,15 @@ pub struct I18nResource {
 
 impl I18nResource {
 	pub fn new(lang_code: &str) -> Self {
-		let path = format!("assets/locales/{}.toml", lang_code);
+		let path = format!("assets/i18/{}.toml", lang_code);
 		let content = std::fs::read_to_string(&path).unwrap_or_default();
 		let toml_value: toml::Value = toml::from_str(&content).unwrap_or_else(|_| toml::Value::Table(toml::map::Map::new()));
 		let dictionary = flatten_toml("", &toml_value);
 		Self { lang: lang_code.to_string(), dictionary }
+	}
+
+	pub fn reload(&mut self, lang_code: &str) {
+		*self = Self::new(lang_code);
 	}
 
 	/// Basic translation — Fallback to display key itself when not found, preventing blank UI

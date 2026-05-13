@@ -33,11 +33,12 @@ pub fn toggle_settings_ui(keyboard: Res<ButtonInput<KeyCode>>, mut ui_state: Res
 }
 
 /// Draw settings panel UI
-pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<SettingsUiState>, mut settings: ResMut<GameSettings>, mut keybinds: ResMut<PlayerKeybinds>, mut editing_state: ResMut<KeybindEditingState>, keyboard: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, i18n: Res<I18nResource>, diagnostics: Res<DiagnosticsStore>, mut active_tab: Local<SettingsTab>, mut render_diagnostics_log_state: Local<RenderDiagnosticsDebugLogState>, mut app_exit: MessageWriter<AppExit>, ) {
+pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<SettingsUiState>, mut settings: ResMut<GameSettings>, mut keybinds: ResMut<PlayerKeybinds>, mut editing_state: ResMut<KeybindEditingState>, keyboard: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, mut i18n: ResMut<I18nResource>, diagnostics: Res<DiagnosticsStore>, mut active_tab: Local<SettingsTab>, mut render_diagnostics_log_state: Local<RenderDiagnosticsDebugLogState>, mut app_exit: MessageWriter<AppExit>, ) {
 	let Ok(ctx) = contexts.ctx_mut() else { return; };
 	if !ui_state.opened { return; }
 	let t = |key: &str| i18n.t(key);
 	let keybind_conflicts = collect_keybind_conflicts(&keybinds, &i18n);
+	let mut language_changed = false;
 
 	if ui_state.page == SettingsUiPage::MainMenu {
 		egui::Window::new(t("settings.title")).default_size([260.0, 180.0]).collapsible(false).resizable(false).show(ctx, |ui| {
@@ -64,7 +65,7 @@ pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<Setting
 			ui.selectable_value(&mut *active_tab, SettingsTab::Audio, t("settings.audio"));
 			ui.selectable_value(&mut *active_tab, SettingsTab::Game, t("settings.game"));
 			ui.selectable_value(&mut *active_tab, SettingsTab::Keybinds, t("settings.keybinds"));
-			ui.selectable_value(&mut *active_tab, SettingsTab::Performance, "Performance");
+			ui.selectable_value(&mut *active_tab, SettingsTab::Performance, t("settings.performance"));
 		});
 		ui.separator();
 
@@ -81,6 +82,17 @@ pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<Setting
 				ui.add(egui::Slider::new(&mut settings.audio.sfx_volume, 0.0..=1.0).text(t("settings.sfx_volume")));
 			}
 			SettingsTab::Game => {
+				ui.horizontal(|ui| {
+					ui.label(t("settings.language"));
+					let previous_language = settings.interface.language.clone();
+					egui::ComboBox::from_id_salt("settings_language")
+						.selected_text(language_display_name(&settings.interface.language))
+						.show_ui(ui, |ui| {
+							ui.selectable_value(&mut settings.interface.language, "zh".to_string(), t("settings.language_zh"));
+							ui.selectable_value(&mut settings.interface.language, "en".to_string(), t("settings.language_en"));
+						});
+					language_changed |= settings.interface.language != previous_language;
+				});
 				ui.add(egui::Slider::new(&mut settings.camera.mouse_sensitivity, 0.001..=0.1).text(t("settings.mouse_sensitivity")));
 				ui.checkbox(&mut settings.camera.invert_y, t("settings.invert_y"));
 				ui.add(egui::Slider::new(&mut settings.camera.first_person_fov_degrees, 40.0..=120.0).text(t("settings.fov")));
@@ -110,6 +122,9 @@ pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<Setting
 			}
 			SettingsTab::Performance => {
 				ui.label("Shows only this project and Bevy diagnostic data.");
+				if ui.button(t("settings.copy_performance")).clicked() {
+					ui.ctx().copy_text(build_performance_report(&diagnostics));
+				}
 				ui.separator();
 				draw_diagnostic_row(ui, "FPS", diagnostic_smoothed(&diagnostics, &FrameTimeDiagnosticsPlugin::FPS).map(|value| format!("{value:.1}")).unwrap_or_else(|| "--".to_string()));
 				draw_diagnostic_row(ui, "Frame time", diagnostic_smoothed(&diagnostics, &FrameTimeDiagnosticsPlugin::FRAME_TIME).map(|value| format!("{value:.2} ms")).unwrap_or_else(|| "--".to_string()));
@@ -135,6 +150,19 @@ pub fn draw_settings_ui(mut contexts: EguiContexts, mut ui_state: ResMut<Setting
 		if editing_state.editing_field.is_some() { ui.label(t("settings.press_any_key")); }
 		else { ui.label(t("settings.press_esc_back")); }
 	});
+	if language_changed {
+		let sanitized = settings.clone().sanitized();
+		settings.interface.language = sanitized.interface.language;
+		i18n.reload(&settings.interface.language);
+	}
+}
+
+fn language_display_name(language: &str) -> &'static str {
+	match language {
+		"en" => "English",
+		"zh" => "中文",
+		_ => "中文",
+	}
 }
 
 fn draw_diagnostic_row(ui: &mut egui::Ui, label: &str, value: String) {
@@ -148,17 +176,56 @@ fn diagnostic_smoothed(diagnostics: &DiagnosticsStore, path: &bevy::diagnostic::
 	diagnostics.get(path).and_then(|diagnostic| diagnostic.smoothed())
 }
 
-fn draw_render_diagnostics(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore, log_state: &mut RenderDiagnosticsDebugLogState) {
-	let mut all_paths = Vec::new();
+fn build_performance_report(diagnostics: &DiagnosticsStore) -> String {
+	let rows = render_diagnostic_rows(diagnostics);
+	let mut lines = vec![
+		"Performance diagnostics".to_string(),
+		format!("FPS: {}", diagnostic_value(diagnostics, &FrameTimeDiagnosticsPlugin::FPS, 1, "")),
+		format!("Frame time: {}", diagnostic_value(diagnostics, &FrameTimeDiagnosticsPlugin::FRAME_TIME, 2, " ms")),
+		format!("Process CPU: {}", diagnostic_value(diagnostics, &SystemInformationDiagnosticsPlugin::PROCESS_CPU_USAGE, 1, " %")),
+		format!("Process RAM: {}", diagnostic_value(diagnostics, &SystemInformationDiagnosticsPlugin::PROCESS_MEM_USAGE, 2, " GiB")),
+		format!("System CPU: {}", diagnostic_value(diagnostics, &SystemInformationDiagnosticsPlugin::SYSTEM_CPU_USAGE, 1, " %")),
+		format!("System RAM: {}", diagnostic_value(diagnostics, &SystemInformationDiagnosticsPlugin::SYSTEM_MEM_USAGE, 1, " %")),
+		format!("Render diagnostics: {}", if rows.is_empty() { "--".to_string() } else { rows.len().to_string() }),
+		format!("Max render GPU: {}", max_render_diagnostic(&rows, "/elapsed_gpu").unwrap_or_else(|| "--".to_string())),
+		format!("Max render CPU: {}", max_render_diagnostic(&rows, "/elapsed_cpu").unwrap_or_else(|| "--".to_string())),
+		"Render rows:".to_string(),
+	];
+	if rows.is_empty() {
+		lines.push("--".to_string());
+	} else {
+		for (path, value, suffix) in rows {
+			let value = value.map(|value| format!("{value:.2}{suffix}")).unwrap_or_else(|| "--".to_string());
+			lines.push(format!("{path}: {value}"));
+		}
+	}
+	lines.push("Note: GPU usage percentage is not shown here; Vulkan/DX12 render diagnostics show GPU elapsed time and pipeline statistics.".to_string());
+	lines.join("\n")
+}
+
+fn diagnostic_value(diagnostics: &DiagnosticsStore, path: &bevy::diagnostic::DiagnosticPath, precision: usize, suffix: &str) -> String {
+	diagnostic_smoothed(diagnostics, path).map(|value| format!("{value:.precision$}{suffix}")).unwrap_or_else(|| "--".to_string())
+}
+
+fn render_diagnostic_rows(diagnostics: &DiagnosticsStore) -> Vec<(String, Option<f64>, String)> {
 	let mut rows = Vec::new();
 	for diagnostic in diagnostics.iter() {
 		let path = diagnostic.path().to_string();
-		all_paths.push(path.clone());
 		if path.starts_with("render/") {
 			rows.push((path, diagnostic.smoothed(), diagnostic.suffix.to_string()));
 		}
 	}
 	rows.sort_by(|a, b| a.0.cmp(&b.0));
+	rows
+}
+
+fn draw_render_diagnostics(ui: &mut egui::Ui, diagnostics: &DiagnosticsStore, log_state: &mut RenderDiagnosticsDebugLogState) {
+	let mut all_paths = Vec::new();
+	let rows = render_diagnostic_rows(diagnostics);
+	for diagnostic in diagnostics.iter() {
+		let path = diagnostic.path().to_string();
+		all_paths.push(path.clone());
+	}
 	log_state.frame_count = log_state.frame_count.wrapping_add(1);
 	if log_state.frame_count == 1 || log_state.frame_count % 120 == 0 {
 		let render_rows = rows.iter().map(|(path, smoothed, suffix)| {

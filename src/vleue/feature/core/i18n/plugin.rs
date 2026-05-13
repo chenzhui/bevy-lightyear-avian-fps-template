@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::bevy_egui::{EguiContexts, egui};
 use super::I18nResource;
+use crate::vleue::feature::core::settings::GameSettings;
 use crate::vleue::feature::VleueSide;
 
 pub struct I18nPlugin { pub side: VleueSide }
@@ -8,7 +9,11 @@ pub struct I18nPlugin { pub side: VleueSide }
 impl Plugin for I18nPlugin {
 	fn build(&self, app: &mut App) {
 		if self.side.is_client() {
-			app.insert_resource(I18nResource::new("zh"));
+			let language = app.world().get_resource::<GameSettings>()
+				.map(|settings| settings.interface.language.as_str())
+				.unwrap_or("zh")
+				.to_string();
+			app.insert_resource(I18nResource::new(&language));
 			app.add_systems(Update, setup_fonts);
 		}
 	}
