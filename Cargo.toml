@@ -6,6 +6,8 @@ edition = "2024"
 [features]
 default = ["combat"]
 combat = []
+tracy = ["bevy/trace_tracy"]
+tracy_memory = ["bevy/trace_tracy_memory"]
 
 [dependencies]
 bevy = { version = "=0.18.0", default-features = false, features = [
@@ -111,8 +113,6 @@ reqwest = { version = "0.12.0", features = ["json", "blocking"] } # HTTP client 
 futures-lite = "2.0"                      # Lightweight async utilities.
 clap = { version = "=4.5.4", features = ["derive"] } # CLI argument parsing.
 once_cell = "1.21.4" # Lazy initialization.
-# Dependency version compatibility override.
-wgpu-hal = "=27.0.3"
 
 
 

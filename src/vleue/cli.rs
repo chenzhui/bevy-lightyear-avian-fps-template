@@ -1,4 +1,5 @@
 use core::time::Duration;
+use bevy::log::{BoxedFmtLayer, Level, LogPlugin};
 use bevy::prelude::*;
 use bevy::log::tracing_subscriber::prelude::*;
 use bevy_inspector_egui::bevy_egui::EguiPlugin;
@@ -15,19 +16,29 @@ use crate::vleue::feature::VleueSide;
 pub struct ProjectLogPlugin;
 
 impl Plugin for ProjectLogPlugin {
-    fn build(&self, _app: &mut App) {
-        let subscriber = bevy::log::tracing_subscriber::registry()
-            .with(
-                bevy::log::tracing_subscriber::fmt::layer().with_filter(
-                    bevy::log::tracing_subscriber::filter::filter_fn(|metadata| {
-                        let target = metadata.target();
-                        let is_project_target = target == env!("CARGO_PKG_NAME") || target.starts_with(concat!(env!("CARGO_PKG_NAME"), "::"));
-                        is_project_target || matches!(*metadata.level(), bevy::log::tracing::Level::ERROR | bevy::log::tracing::Level::WARN  )
-                    }),
-                ),
-            );
-        let _ = bevy::log::tracing::subscriber::set_global_default(subscriber);
+    fn build(&self, app: &mut App) {
+        app.add_plugins(LogPlugin {
+            level: Level::INFO,
+            filter: format!("info,wgpu=error,naga=warn,{}=trace", env!("CARGO_PKG_NAME")),
+            fmt_layer: project_fmt_layer,
+            ..default()
+        });
     }
+}
+
+fn project_fmt_layer(_app: &mut App) -> Option<BoxedFmtLayer> {
+    Some(Box::new(
+        bevy::log::tracing_subscriber::fmt::layer()
+            .with_writer(std::io::stderr)
+            .with_filter(bevy::log::tracing_subscriber::filter::filter_fn(|metadata| {
+                if metadata.fields().field("tracy.frame_mark").is_some() {
+                    return false;
+                }
+                let target = metadata.target();
+                let is_project_target = target == env!("CARGO_PKG_NAME") || target.starts_with(concat!(env!("CARGO_PKG_NAME"), "::"));
+                is_project_target || matches!(*metadata.level(), Level::ERROR | Level::WARN)
+            })),
+    ))
 }
 
 #[derive(Parser, Debug)]

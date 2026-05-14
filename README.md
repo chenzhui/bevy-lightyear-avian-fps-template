@@ -58,6 +58,23 @@ In the project root, start the game client:
 cargo run -- client
 ```
 
+### Profiling With Tracy
+
+Start `tracy-profiler`, click `Connect`, then run the game with Tracy instrumentation enabled:
+```bash
+cargo run --release --features tracy -- client
+```
+
+For a server trace:
+```bash
+cargo run --release --features tracy -- server
+```
+
+Use `tracy_memory` only when allocation profiling is needed, because it adds more overhead:
+```bash
+cargo run --release --features tracy_memory -- client
+```
+
 ## Architecture
 
 - **`src/`**: Rust-based game client and server logic.
