@@ -20,8 +20,6 @@ impl Plugin for FeaturePlugin {
 			physics::VleuePhysicsPlugin, // Physics base loaded first
 			core::CoreFeaturePlugin { side: self.side },
 			character::CharacterPlugin { side: self.side },
-			#[cfg(feature = "combat")]
-			combat::CombatPlugin { side: self.side },
 			lobby::LobbyPlugin { side: self.side },
 			level::LevelFeaturePlugin { side: self.side, headless: self.headless },
 		));
