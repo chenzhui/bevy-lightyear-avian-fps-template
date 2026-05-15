@@ -4,8 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["combat"]
-combat = []
 tracy = ["bevy/trace_tracy"]
 tracy_memory = ["bevy/trace_tracy_memory"]
 
