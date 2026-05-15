@@ -141,7 +141,7 @@ pub fn character_is_grounded(entity: Entity, position: Vec3, linear_velocity: Ve
 }
 
 
-pub fn apply_character_action(entity: Entity, _mass: &ComputedMass, rotation: &Rotation, time: &Res<Time>, spatial_query: &SpatialQuery, action_state: &ActionState<CharacterAction>, life_state: &LifeState, mut forces: ForcesItem, ) {
+pub fn apply_character_action(entity: Entity, _mass: &ComputedMass, rotation: &Rotation, time: &Time<Fixed>, spatial_query: &SpatialQuery, action_state: &ActionState<CharacterAction>, life_state: &LifeState, mut forces: ForcesItem, ) {
     // Dead state disables all actions.
     if life_state.status == LifeStatus::Dead {
         let velocity = forces.linear_velocity_mut();
@@ -219,7 +219,7 @@ pub fn movement_input_dir(action_state: &ActionState<CharacterAction>) -> Vec2 {
     input_dir.clamp_length_max(1.0)
 }
 
-fn handle_character_actions_server(time: Res<Time>, spatial_query: Option<SpatialQuery>, mut query: Query<     (Entity, &ComputedMass, &Rotation, &ActionState<CharacterAction>, &LifeState, Forces,), With<CharacterMarker>, >, ) { // Server authoritative side executes the same movement logic.
+fn handle_character_actions_server(time: Res<Time<Fixed>>, spatial_query: Option<SpatialQuery>, mut query: Query<     (Entity, &ComputedMass, &Rotation, &ActionState<CharacterAction>, &LifeState, Forces,), With<CharacterMarker>, >, ) { // Server authoritative side executes the same movement logic.
     let Some(spatial_query) = spatial_query else { return; };
     for (entity, mass, rotation, action_state, life_state, forces) in &mut query {
         apply_character_action(entity, mass, rotation, &time, &spatial_query, action_state, life_state, forces, );
@@ -251,7 +251,7 @@ fn clear_local_character_input_when_ui_open(mut query: Query<&mut ActionState<Ch
 }
 
 
-fn handle_character_actions_client(time: Res<Time>, spatial_query: Option<SpatialQuery>, timeline: Res<LocalTimeline>,
+fn handle_character_actions_client(time: Res<Time<Fixed>>, spatial_query: Option<SpatialQuery>, timeline: Res<LocalTimeline>,
     mut query: Query<(Entity, &ComputedMass, &Rotation, &ActionState<CharacterAction>, &LifeState, Forces,), (With<CharacterMarker>, With<Controlled>, With<Predicted>), >,
 ) {
     // Client prediction side executes the same movement logic.

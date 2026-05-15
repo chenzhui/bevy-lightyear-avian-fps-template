@@ -31,9 +31,29 @@ pub fn env_string(key: &str) -> String {
     env::var(key).expect(&format!("环境变量 {} 未设置", key))
 }
 pub fn env_u16(key: &str, default: u16) -> u16 {
-    env::var(key).ok().and_then(|value| value.parse::<u16>().ok()).unwrap_or(default)
+    env::var(key)
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(default)
+}
+
+pub fn env_u32(key: &str, default: u32) -> u32 {
+    env::var(key)
+        .ok()
+        .and_then(|value| value.parse::<u32>().ok())
+        .unwrap_or(default)
+}
+
+pub fn env_f64(key: &str, default: f64) -> f64 {
+    env::var(key)
+        .ok()
+        .and_then(|value| value.parse::<f64>().ok())
+        .unwrap_or(default)
 }
 
 pub fn env_u64(key: &str, default: u64) -> u64 {
-    env::var(key).ok().and_then(|value| value.parse::<u64>().ok()).unwrap_or(default)
+    env::var(key)
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(default)
 }
