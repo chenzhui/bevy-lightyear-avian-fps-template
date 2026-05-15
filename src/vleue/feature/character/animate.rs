@@ -10,12 +10,14 @@ use std::time::Duration;
 use avian3d::physics_transform::Position;
 use avian3d::prelude::SpatialQuery;
 use crate::vleue::feature::VleueSide;
+use crate::vleue::feature::character::input::{CharacterAttackIntent, CharacterShootIntent};
 use crate::vleue::feature::character::movement::{character_is_grounded, movement_input_dir, CharacterAction, CharacterMarker};
-use crate::vleue::feature::combat::CombatState;
 
 pub const CHARACTER_MODEL_PATH: &str = "girl.glb";
 const RUN_ENTER_SPEED: f32 = 0.35;
 const RUN_EXIT_SPEED: f32 = 0.15;
+const MELEE_ANIM_LOCK: f32 = 0.42;
+const SHOOT_ANIM_LOCK: f32 = 0.18;
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Reflect, Default)]
 pub enum CharacterAnim {
@@ -31,6 +33,13 @@ pub enum CharacterAnim {
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
 pub struct CharacterAnimState {
 	pub current: CharacterAnim, // Lightweight synced animation state, currently syncs movement and combat animation selection.
+	pub animation_lock: Option<(CharacterAnim, f32)>, // Animation-owned lock, keeps short attack/shoot clips from being immediately overridden by movement.
+}
+
+impl CharacterAnimState {
+	pub fn locked_animation(&self) -> Option<CharacterAnim> {
+		self.animation_lock.and_then(|(anim, t)| (t > 0.0).then_some(anim))
+	}
 }
 
 #[derive(Component)]
@@ -76,7 +85,7 @@ impl Plugin for AnimationShaderPlugin {
 }
 
 fn anim_state_should_rollback(this: &CharacterAnimState, that: &CharacterAnimState) -> bool {
-	this != that
+	this.current != that.current
 }
 //endregion shader
 
@@ -89,13 +98,26 @@ impl Plugin for AnimationServerPlugin {
 	}
 }
 
-fn update_character_animation_state(spatial_query: SpatialQuery, mut query: Query<(Entity, &Position, &LinearVelocity, &ActionState<CharacterAction>, Option<&CombatState>, &mut CharacterAnimState), With<CharacterMarker>>, ) {
-	for (entity, position, velocity, action_state, combat_state, mut anim_state) in &mut query {
+fn update_character_animation_state(spatial_query: SpatialQuery, time: Res<Time>, mut attack_events: MessageReader<CharacterAttackIntent>, mut shoot_events: MessageReader<CharacterShootIntent>, mut query: Query<(Entity, &Position, &LinearVelocity, &ActionState<CharacterAction>, &mut CharacterAnimState), With<CharacterMarker>>, ) {
+	let dt = time.delta_secs();
+	let attack_entities: Vec<Entity> = attack_events.read().map(|event| event.entity).collect();
+	let shoot_entities: Vec<Entity> = shoot_events.read().map(|event| event.entity).collect();
+	for (entity, position, velocity, action_state, mut anim_state) in &mut query {
+		if let Some((anim, t)) = anim_state.animation_lock {
+			let next = (t - dt).max(0.0);
+			anim_state.animation_lock = (next > 0.0).then_some((anim, next));
+		}
+		if attack_entities.contains(&entity) {
+			anim_state.animation_lock = Some((CharacterAnim::Attack, MELEE_ANIM_LOCK));
+		}
+		if shoot_entities.contains(&entity) {
+			anim_state.animation_lock = Some((CharacterAnim::Shoot, SHOOT_ANIM_LOCK));
+		}
 		let horizontal_speed = Vec2::new(velocity.x, velocity.z).length();
 		let move_input = movement_input_dir(action_state).length();
 		let wants_move = move_input > 0.1;
 		let is_grounded = character_is_grounded(entity, position.0, velocity.0, &spatial_query);
-		let locked_anim = combat_state.and_then(|state| state.locked_animation());
+		let locked_anim = anim_state.locked_animation();
 		anim_state.current = match anim_state.current {
 			_ if !is_grounded => CharacterAnim::Jump,
 			_ if matches!(locked_anim, Some(CharacterAnim::Shoot)) => CharacterAnim::Shoot,

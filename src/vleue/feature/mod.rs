@@ -2,7 +2,6 @@ pub mod core;  // Physics and entity representation: player, NPC, basic physics.
 pub mod lobby;
 pub mod character;
 // If your game suddenly becomes a pure social lobby (no enemies, no combat, only chat and wandering), which code must remain? Which can be deleted? Must remain -> belongs to character (inherent to the character itself). Can delete -> belongs to combat (damage or adversarial interactions).
-pub mod combat;
 pub mod level;
 pub mod physics;
 
