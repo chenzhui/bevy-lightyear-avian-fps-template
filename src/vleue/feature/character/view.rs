@@ -1,6 +1,5 @@
 use crate::vleue::feature::character::movement::{CharacterAimPitch, CharacterMarker};
 use crate::vleue::feature::character::VleuePlayer;
-use crate::vleue::feature::combat::Health;
 use crate::vleue::feature::core::settings::{msaa_from_samples, GameSettings, SettingsUiState};
 use crate::vleue::feature::core::state::InGameState;
 use avian3d::physics_transform::{Position, Rotation};
@@ -78,7 +77,7 @@ impl Plugin for ViewClientPlugin {
 		app.add_systems(Startup, init_camera);
 		app.add_systems(OnEnter(InGameState::Playing), (lock_cursor_on_enter_game, spawn_crosshair));
 		app.add_systems(Update, maintain_fps_cursor.run_if(in_state(InGameState::Playing)));
-		app.add_systems(Update, sync_health_hud.run_if(in_state(InGameState::Playing)));
+		// app.add_systems(Update, sync_health_hud.run_if(in_state(InGameState::Playing)));
 		app.add_systems(OnExit(InGameState::Playing), (unlock_cursor_on_exit_game, cleanup_crosshair, cleanup_health_hud));
 		app.add_systems(Last, update_first_person_camera);
 		app.add_observer(hide_local_first_person_head_parts);
@@ -213,24 +212,7 @@ fn cleanup_crosshair(mut commands: Commands, crosshair_query: Query<Entity, With
 }
 
 
-fn sync_health_hud(player_query: Query<&Health, (With<VleuePlayer>, With<CharacterMarker>, With<Predicted>, With<Controlled>)>, mut fill_query: Query<(&mut Node, &mut BackgroundColor), With<HealthBarFill>>, mut text_query: Query<&mut Text, With<HealthBarText>>) { // Sync HUD health bar width and text using local player.
-	let Ok(health) = player_query.single() else { return; };
-	let ratio = if health.max > 0.0 { (health.current / health.max).clamp(0.0, 1.0) } else { 0.0 };
-	let width = ((HEALTH_BAR_WIDTH - 6.0) * ratio).max(0.0);
-	if let Ok((mut node, mut color)) = fill_query.single_mut() {
-		node.width = Val::Px(width);
-		color.0 = if ratio > 0.5 {
-			Color::srgb(0.18, 0.72, 0.24)
-		} else if ratio > 0.25 {
-			Color::srgb(0.88, 0.64, 0.16)
-		} else {
-			Color::srgb(0.81, 0.18, 0.18)
-		};
-	}
-	if let Ok(mut text) = text_query.single_mut() {
-		*text = Text::new(format!("{:.0} / {:.0}", health.current, health.max));
-	}
-}
+
 
 fn cleanup_health_hud(mut commands: Commands, hud_query: Query<Entity, With<HealthHudRoot>>) { // Clear health bar HUD when exiting first-person match.
 	for entity in &hud_query {

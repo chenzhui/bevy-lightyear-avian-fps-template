@@ -8,11 +8,9 @@ use bevy::app::{App, Plugin, Update};
 use bevy::math::Vec3;
 use bevy::prelude::{Add, Component, On, Query, Res, With, Without};
 use bevy::prelude::{AssetServer, Commands, Entity, Name, SceneRoot, Transform};
-use bevy::prelude::debug;
 use lightyear::prelude::PeerId;
 use lightyear_replication::prelude::AppComponentExt;
 use serde::{Deserialize, Serialize};
-
 
 
 pub mod movement; // Player movement, jumping, and physics tuning.
@@ -21,11 +19,6 @@ pub mod free_cam; // Free camera mode.
 pub mod view; // First-person view, crosshair, and HUD.
 pub mod animate;  // Character animation system.
 pub mod types;
-
-
-#[cfg(feature = "combat")]
-use crate::vleue::feature::combat::{CombatLoadout, CombatState, Health, LifeState};
-use crate::vleue::feature::combat::attribute::CharacterAttributes;
 
 pub struct CharacterPlugin {
 	pub side: VleueSide,
@@ -107,7 +100,7 @@ impl Plugin for PlayerServerPlugin {
 }
 
 
-fn setup_server_player(trigger: On<Add, VleuePlayer>, mut commands: Commands, asset_server: Res<AssetServer>, query: Query<(Option<&Transform>, Option<&Position>), With<VleuePlayer>>, ) { // Server adds essential 3D character components for new player.
+fn setup_server_player(trigger: On<Add, VleuePlayer>, mut commands: Commands, query: Query<(Option<&Transform>, Option<&Position>), With<VleuePlayer>>, ) { // Server adds essential 3D character components for new player.
     let entity = trigger.entity;
     let Ok((transform, position)) = query.get(entity) else {
         return;
@@ -121,14 +114,6 @@ fn setup_server_player(trigger: On<Add, VleuePlayer>, mut commands: Commands, as
     ));
 
 
-    #[cfg(feature = "combat")]
-    commands.entity(entity).insert((
-        Health::new(100.),
-        LifeState::alive(),
-        CombatLoadout::player_default(),
-        CombatState::default(),
-        CharacterAttributes::default(),
-    ));
 
 
     commands.entity(entity).insert((

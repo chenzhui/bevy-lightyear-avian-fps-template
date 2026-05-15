@@ -7,7 +7,6 @@ use lightyear::prelude::*;
 use serde::{Deserialize, Serialize};
 use crate::vleue::feature::character::view::{allow_fps_character_control, fps_cursor_ui_open};
 use crate::vleue::feature::VleueSide;
-use crate::vleue::feature::combat::{LifeState, LifeStatus};
 use crate::vleue::feature::core::settings::{GameSettings, InputBinding, PlayerKeybinds};
 
 const MAX_SPEED: f32 = 5.0; // Movement speed.
@@ -31,6 +30,20 @@ pub const HITBOX_LAYER: LayerMask = LayerMask(1 << 2); // Hitbox query layer, re
 #[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Default)] pub struct CharacterYaw(pub f32); // Absolute yaw angle.
 #[derive(Component, Clone, Copy, PartialEq, Eq, Hash, Debug, Reflect, Serialize, Deserialize)] pub enum CharacterAction { MoveUp, MoveDown, MoveLeft, MoveRight, Jump, Look, Interact, Attack, Shoot, SkillQ, UseMedkit, UseTeleportScroll, }
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq)] pub enum CharacterHitboxKind { Head, Body, } // Character hitbox type, used for body-part-specific damage calculation.
+
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq, Reflect)]
+#[reflect(Component)]
+pub struct LifeState {
+    pub status: LifeStatus,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Reflect, Default)]
+pub enum LifeStatus {
+    #[default]
+    Alive,
+    Downed,
+    Dead,
+}
 
 impl Actionlike for CharacterAction {
     fn input_control_kind(&self) -> InputControlKind {
