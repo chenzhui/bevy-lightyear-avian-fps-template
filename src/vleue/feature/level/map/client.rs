@@ -1,4 +1,4 @@
-use crate::vleue::feature::character::VleuePlayer;
+
 use crate::vleue::feature::character::movement::{CharacterMarker, PLAYER_LAYER, WORLD_LAYER};
 use crate::vleue::feature::core::state::InGameState;
 use crate::vleue::feature::level::map::{self, MapCollisionConfig, MapTerrainHeightfieldConfig};
@@ -12,6 +12,7 @@ use lightyear::prelude::Predicted;
 use lightyear_replication::prelude::Controlled;
 use std::collections::{HashMap, HashSet};
 use symbios_ground::HeightMap;
+use crate::vleue::feature::core::connection::VleuePlayer;
 
 #[derive(Resource)]
 pub struct MapStreamingRuntime { // Runtime state owned by the client-side map streamer.

@@ -4,7 +4,7 @@ use bevy::gltf::Gltf;
 use bevy::prelude::*;
 use lightyear::prelude::{Controlled, Predicted};
 use crate::vleue::feature::character::movement::CharacterMarker;
-use crate::vleue::feature::character::VleuePlayer;
+use crate::vleue::feature::core::connection::VleuePlayer;
 use crate::vleue::feature::core::state::InGameState;
 use crate::vleue::feature::VleueSide;
 

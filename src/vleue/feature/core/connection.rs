@@ -10,7 +10,6 @@ use lightyear::connection::client_of::ClientOf;
 use lightyear::prelude::{AppChannelExt, AppMessageExt, ChannelMode, ChannelSettings, Client as NetworkClient, Connect, Connected, Connecting, Disconnect, Disconnected, Linked, LinkOf, MessageReceiver, MessageSender, NetworkDirection, NetworkTarget, PeerId, ReliableSettings, RemoteId, Unlinked};
 use lightyear_replication::prelude::{AppComponentExt, ControlledBy, DisableReplicateHierarchy, InterpolationTarget, Lifetime, PredictionTarget, Replicate, ReplicationSender, RoomEvent, RoomTarget, SendUpdatesMode};
 use crate::vleue::cli_connection::{shared_settings, ClientConnection, ClientTransports, SEND_INTERVAL};
-use crate::vleue::feature::character::{VleueClientId, VleuePlayer};
 use crate::vleue::feature::VleueSide;
 use crate::vleue::feature::core::net::{backend_base_url, BackendClient};
 use crate::vleue::feature::core::room::{FIXED_ROOM_COUNT, MatchRoomStates, PendingPlayers, RoomManager};
@@ -134,6 +133,13 @@ impl Plugin for ConnectionPlugin {
 //endregion plugin
 
 
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct VleuePlayer; // Player entity marker.
+
+#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct VleueClientId(pub PeerId); // Player's corresponding network client ID.
+
+
 //region shader
 #[derive(Clone)]
 pub struct ConnectionShaderPlugin;
@@ -142,6 +148,8 @@ impl Plugin for ConnectionShaderPlugin {
     fn build(&self, app: &mut App) {
         app.register_component::<GameRoomId>();
         app.register_component::<MatchId>();
+	      app.register_component::<VleuePlayer>();
+	    app.register_component::<VleueClientId>();
         app.register_component::<PendingMatchServerConnection>();
         app.register_message::<JoinMatchRequest>().add_direction(NetworkDirection::ClientToServer);
         app.add_channel::<JoinMatchChannel>(ChannelSettings { mode: ChannelMode::OrderedReliable(ReliableSettings::default()), ..default() }).add_direction(NetworkDirection::ClientToServer);

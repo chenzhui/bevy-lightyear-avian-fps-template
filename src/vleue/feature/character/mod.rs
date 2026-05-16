@@ -11,7 +11,7 @@ use bevy::prelude::{AssetServer, Commands, Entity, Name, SceneRoot, Transform};
 use lightyear::prelude::PeerId;
 use lightyear_replication::prelude::AppComponentExt;
 use serde::{Deserialize, Serialize};
-
+use crate::vleue::feature::core::connection::{VleueClientId, VleuePlayer};
 
 pub mod movement; // Player movement, jumping, and physics tuning.
 pub mod input; // Input intent layer that translates button state into gameplay events.
@@ -49,11 +49,7 @@ impl Plugin for CharacterPlugin {
 }
 
 
-#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct VleuePlayer; // Player entity marker.
 
-#[derive(Component, Serialize, Deserialize, Clone, Debug, PartialEq)]
-pub struct VleueClientId(pub PeerId); // Player's corresponding network client ID.
 
 
 
@@ -83,8 +79,6 @@ impl Plugin for PlayerShaderPlugin {
 				..bevy::prelude::default()
 			},
 		});
-		app.register_component::<VleuePlayer>();
-		app.register_component::<VleueClientId>();
 	}
 }
 
