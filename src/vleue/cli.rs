@@ -55,6 +55,8 @@ pub enum Mode {
         client_id: Option<u64>,
         #[arg(long, default_value_t = false)]
         free_cam: bool,
+        #[arg(short = 'r', long, default_value_t = false)]
+        render_colliders: bool,
     },
     Server {
         #[arg(short, long, default_value_t = 0)]
@@ -64,6 +66,9 @@ pub enum Mode {
 
 #[derive(Resource, Debug, Clone, Copy, Default)]
 pub struct IsFreeCam(pub bool);
+
+#[derive(Resource, Debug, Clone, Copy, Default)]
+pub struct IsClientColliderDebug(pub bool);
 
 pub struct VleueCliPlugin {
     pub mode: Mode,
@@ -87,8 +92,9 @@ impl Plugin for VleueCliPlugin {
                     });
                 }
             }
-            Mode::Client { client_id, free_cam } => {
+            Mode::Client { client_id, free_cam, render_colliders } => {
                 app.insert_resource(IsFreeCam(*free_cam));
+                app.insert_resource(IsClientColliderDebug(*render_colliders));
                 app.insert_resource(UserId(client_id.unwrap_or(1)));
                 app.add_plugins(client::ClientPlugins { tick_duration: self.tick_duration });
                 app.add_plugins(VleueWindowPlugin {
