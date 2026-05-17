@@ -7,11 +7,16 @@ use avian3d::collision::CollisionDiagnostics;
 use avian3d::dynamics::solver::schedule::SubstepCount;
 use avian3d::interpolation::PhysicsInterpolationPlugin;
 use avian3d::physics_transform::{PhysicsTransformPlugin, Position, Rotation};
-use avian3d::prelude::{AngularVelocity, ComputedMass, LinearVelocity};
+use avian3d::prelude::{AngularVelocity, ComputedMass, LayerMask, LinearVelocity};
 use bevy::prelude::*;
 use lightyear::avian3d::plugin::{AvianReplicationMode, LightyearAvianPlugin};
 use lightyear::prelude::{InterpolationRegistrationExt, PredictionRegistrationExt};
 use lightyear_replication::prelude::AppComponentExt;
+
+
+pub const WORLD_LAYER: LayerMask = LayerMask(1 << 0); // World static collision layer, ground and scene obstacles go here.
+pub const PLAYER_LAYER: LayerMask = LayerMask(1 << 1); // Player movement collision layer, only blocks character vs world.
+pub const HITBOX_LAYER: LayerMask = LayerMask(1 << 2); // Hitbox query layer, reserved for shooting hit detection.
 
 pub struct VleuePhysicsPlugin;
 

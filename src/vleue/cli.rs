@@ -36,7 +36,7 @@ fn project_fmt_layer(_app: &mut App) -> Option<BoxedFmtLayer> {
                 }
                 let target = metadata.target();
                 let is_project_target = target == env!("CARGO_PKG_NAME") || target.starts_with(concat!(env!("CARGO_PKG_NAME"), "::"));
-                is_project_target || matches!(*metadata.level(), Level::ERROR | Level::WARN)
+                is_project_target || matches!(*metadata.level(), Level::INFO)
             })),
     ))
 }

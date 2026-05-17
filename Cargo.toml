@@ -48,7 +48,7 @@ bevy = { version = "=0.18.0", default-features = false, features = [
 
 bevy_symbios_ground = "0.2" # Terrain visual mesh generation; keep physics disabled to avoid pulling avian3d 0.6.
 symbios-ground = "0.2" # Terrain data structures: HeightMap / WeightMap.
-bevy-inspector-egui = { version = "=0.36.0", default-features = false, features = [  # Debugging and visualization tools.
+bevy-inspector-egui = { path = "../../../bevy-inspector-egui-0.36.0/crates/bevy-inspector-egui", default-features = false, features = [  # Debugging and visualization tools.
     "bevy_pbr",
 #    "bevy_image",
     "bevy_render",

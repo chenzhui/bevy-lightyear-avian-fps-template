@@ -1,8 +1,8 @@
 pub mod core;  // Physics and entity representation: player, NPC, basic physics.
 pub mod lobby;
-pub(crate) mod character;
+// pub(crate) mod character;
 // If your game suddenly becomes a pure social lobby (no enemies, no combat, only chat and wandering), which code must remain? Which can be deleted? Must remain -> belongs to character (inherent to the character itself). Can delete -> belongs to combat (damage or adversarial interactions).
-pub mod level;
+// pub(crate) mod level;
 pub mod physics;
 
 // Gameplay layer: combat, pickup, lobby, extraction and other systems.
@@ -19,9 +19,9 @@ impl Plugin for FeaturePlugin {
 		app.add_plugins((
 			physics::VleuePhysicsPlugin, // Physics base loaded first
 			core::CoreFeaturePlugin { side: self.side },
-			character::CharacterPlugin { side: self.side },
+			// character::CharacterPlugin { side: self.side },
 			lobby::LobbyPlugin { side: self.side },
-			level::LevelFeaturePlugin { side: self.side, headless: self.headless },
+			// level::LevelFeaturePlugin { side: self.side, headless: self.headless },
 		));
 	}
 }
